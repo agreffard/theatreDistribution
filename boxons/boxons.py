@@ -1,23 +1,17 @@
 #!/usr/bin/env python
 import sys
 import os
+import random
 
 characters = {}
-# partners = {}
 scenes = {}
 
 header = []
 
-actorsList = {
-    'Aurel': 'H',
-    'Auriane': 'F',
-    'Cannelle': 'F',
-    'Clara': 'F',
-    'Leonie': 'F',
-    'Manu': 'H',
-    'Stephane': 'H',
-    'Pascal': 'H',
-}
+actors = ['Acteur 1', 'Acteur 2', 'Acteur 3', 'Acteur 4'] # Aurel, Manu, Stephane, Pascal
+actresses = ['Actrice 1', 'Actrice 2', 'Actrice 3', 'Actrice 4'] # Auriane, Cannelle, Clara, Leonie
+
+distributions = []
 
 class Character:
     def __init__(self, name, gender, lines):
@@ -54,8 +48,27 @@ class Actor:
     def __str__(self):
         return self.name
 
+class Distribution:
+    def __init__(self):
+        self.actorByCharacter = {}
+        self.charactersByActor = {}
+        self.incompatibilities = {}
+
+    # def __eq__(self, other):
+    #     for k, v in self.actorByCharacter.items():
+    #         if self.actorByCharacter[k] != other.actorByCharacter[k]:
+    #             return False
+    #     return True
+
+def getDistribByActor(name):
+    global scenes
+    if name in scenes:
+        return scenes[name]
+    scene = Scene(name)
+    scenes[name] = scene
+    return scene
+
 def getSceneByName(name):
-    # print("getSceneByName " + name)
     global scenes
     if name in scenes:
         return scenes[name]
@@ -64,8 +77,6 @@ def getSceneByName(name):
     return scene
 
 def getSceneName(index):
-    # print("getSceneName " + str(index) + " - " + str(len(header)))
-    # print(str(header))
     return header[index]
 
 def getSceneByIndex(index):
@@ -110,12 +121,70 @@ def printPartners():
     print ("################################### PARTENAIRES DE JEU ###################################")
     for k, v in characters.items():
         print(k + " : " + str(v.partners))
+    print ("##########################################################################################")
+
+def getRandomAvailableActor(character, distribution):
+    availabilities = []
+    if character.gender == 'F':
+        availabilities = actresses
+    elif character.gender == 'H':
+        availabilities = actors
+    else:
+        availabilities = actors + actresses
+    availabilities = [c for c in availabilities if character.name not in distribution.incompatibilities or c not in distribution.incompatibilities[character.name]]
+    selectedActor = random.choice(availabilities)
+    return selectedActor
+
+def addCharacterToActor(actor, character, distribution):
+    distribution.actorByCharacter[character.name] = actor
+    if actor not in distribution.charactersByActor:
+        distribution.charactersByActor[actor] = []
+    distribution.charactersByActor[actor].append(character)
+    if character.name not in distribution.incompatibilities:
+        distribution.incompatibilities[character.name] = []
+    for partner in character.partners:
+        if partner not in distribution.incompatibilities[character.name]:
+            distribution.incompatibilities[character.name].append(partner)
+
+def newDistrib():
+    distribution = Distribution()
+    for character in characters.values():
+        selectedActor = getRandomAvailableActor(character, distribution)
+        if selectedActor is None:
+            return None
+        addCharacterToActor(selectedActor, character, distribution)
+        print(character.name + " ::: " + str(selectedActor))
+    return distribution
+
+def removeDistributionDuplicates():
+    global distributions
+    distributions = [distribution for i in distribution]
+
+def calculateLinesInDistribution(distribution):
+    return { actorName: sum([int(character.lines) for character in characters]) for actorName, characters in distribution.charactersByActor.items()}
+
+def nbActorsInDistribution(distribution):
+    return len(distribution.charactersByActor.keys())
+
+def offsetLines(distribution):
+    lines = [l for l in calculateLinesInDistribution(distribution).values()]
+    return max(lines) - min(lines)
 
 def main():
+    global distributions
     buildData()
     # ok ici on a tous nos partenaires de jeu
     printPartners()
-
+    # on genere des distrib aleatoires
+    for i in range(1000):
+        distribution = newDistrib()
+        if distribution is not None and distribution not in distributions:
+            distributions.append(distribution)
+    # on verifie si les repartitions sont homogenes
+    for d in distributions:
+        offset = offsetLines(d)
+        if (nbActorsInDistribution(d) == 8 and offset < 200):
+            print("LINES OFFSET::: " + str(offset))
 
 
 if __name__ == "__main__":
