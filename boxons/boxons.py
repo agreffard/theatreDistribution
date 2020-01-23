@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 import random
@@ -110,14 +112,15 @@ def buildData():
         line = f.readline()
         while line:
             characterData = line.split('\t')
-            print(characterData)
-            print("Line {}: {}".format(cnt, line.strip()))
+            # print(characterData)
+            # print("Line {}: {}".format(cnt, line.strip()))
             addLine(characterData)
             cnt += 1
             line = f.readline()
 
 
 def printPartners():
+    return
     print ("################################### PARTENAIRES DE JEU ###################################")
     for k, v in characters.items():
         print(k + " : " + str(v.partners))
@@ -153,22 +156,45 @@ def newDistrib():
         if selectedActor is None:
             return None
         addCharacterToActor(selectedActor, character, distribution)
-        print(character.name + " ::: " + str(selectedActor))
+        # print(character.name + " ::: " + str(selectedActor))
     return distribution
 
 def removeDistributionDuplicates():
     global distributions
     distributions = [distribution for i in distribution]
 
+def calculateSumLines(characters):
+    return sum([int(character.lines) for character in characters])
+
+def diffLines(lines):
+    diff = ((lines / 197.25) -1.0) * 100.0
+    perct = "{:.1f}%".format(diff)
+    if (diff > 0):
+        return "+" + perct
+    return perct
+
 def calculateLinesInDistribution(distribution):
-    return { actorName: sum([int(character.lines) for character in characters]) for actorName, characters in distribution.charactersByActor.items()}
+    return {
+        actorName: {
+            'lines': calculateSumLines(characters),
+            'diff': diffLines(calculateSumLines(characters)),
+            'characters': characters
+            # 'offset': offsetLines(calculateSumLines(characters)),
+        }
+        for actorName, characters in distribution.charactersByActor.items()
+    }
 
 def nbActorsInDistribution(distribution):
     return len(distribution.charactersByActor.keys())
 
 def offsetLines(distribution):
-    lines = [l for l in calculateLinesInDistribution(distribution).values()]
+    lines = [l['lines'] for l in calculateLinesInDistribution(distribution).values()]
+    # print(str(lines))
     return max(lines) - min(lines)
+
+def diffDistribution(distribution):
+    lines = [l['lines'] for l in calculateLinesInDistribution(distribution).values()]
+    return diffLines(lines)
 
 def main():
     global distributions
@@ -176,15 +202,23 @@ def main():
     # ok ici on a tous nos partenaires de jeu
     printPartners()
     # on genere des distrib aleatoires
-    for i in range(1000):
+    for i in range(20000):
+        print(str(i))
         distribution = newDistrib()
         if distribution is not None and distribution not in distributions:
             distributions.append(distribution)
     # on verifie si les repartitions sont homogenes
+    
     for d in distributions:
         offset = offsetLines(d)
-        if (nbActorsInDistribution(d) == 8 and offset < 200):
-            print("LINES OFFSET::: " + str(offset))
+        if (nbActorsInDistribution(d) == 8 and offset < 140):
+            result = ["{}: {} ({} repliques, {}).".format(actorName, info['characters'], info['lines'], info['diff']) for actorName, info in calculateLinesInDistribution(d).items()]
+            print("Ecart: {}. Resultat = {}\n".format(str(offset), str(result)))
+            # print("LINES OFFSET::: " + str(offset))
+
+
+
+
 
 
 if __name__ == "__main__":
