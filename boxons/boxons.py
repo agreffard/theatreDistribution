@@ -134,20 +134,27 @@ def getRandomAvailableActor(character, distribution):
         availabilities = actors
     else:
         availabilities = actors + actresses
-    availabilities = [c for c in availabilities if character.name not in distribution.incompatibilities or c not in distribution.incompatibilities[character.name]]
+
+    availabilities = [a for a in availabilities if a not in distribution.incompatibilities or character not in distribution.incompatibilities[a]]
+    print ("availabilities" + str(availabilities))
+
+    if len(availabilities) == 0:
+        return None
     selectedActor = random.choice(availabilities)
     return selectedActor
+
 
 def addCharacterToActor(actor, character, distribution):
     distribution.actorByCharacter[character.name] = actor
     if actor not in distribution.charactersByActor:
         distribution.charactersByActor[actor] = []
     distribution.charactersByActor[actor].append(character)
-    if character.name not in distribution.incompatibilities:
-        distribution.incompatibilities[character.name] = []
+
+    if actor not in distribution.incompatibilities:
+        distribution.incompatibilities[actor] = []
     for partner in character.partners:
-        if partner not in distribution.incompatibilities[character.name]:
-            distribution.incompatibilities[character.name].append(partner)
+        if partner not in distribution.incompatibilities[actor]:
+            distribution.incompatibilities[actor].append(partner)
 
 def newDistrib():
     distribution = Distribution()
@@ -202,8 +209,9 @@ def main():
     # ok ici on a tous nos partenaires de jeu
     printPartners()
     # on genere des distrib aleatoires
-    for i in range(20000):
-        print(str(i))
+    it = 1000
+    for i in range(1000):
+        print(str(i)+"/"+str(it))
         distribution = newDistrib()
         if distribution is not None and distribution not in distributions:
             distributions.append(distribution)
@@ -211,7 +219,7 @@ def main():
     
     for d in distributions:
         offset = offsetLines(d)
-        if (nbActorsInDistribution(d) == 8 and offset < 140):
+        if nbActorsInDistribution(d) == 8 and offset < 140:
             result = ["{}: {} ({} repliques, {}).".format(actorName, info['characters'], info['lines'], info['diff']) for actorName, info in calculateLinesInDistribution(d).items()]
             print("Ecart: {}. Resultat = {}\n".format(str(offset), str(result)))
             # print("LINES OFFSET::: " + str(offset))
