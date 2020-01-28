@@ -10,10 +10,56 @@ scenes = {}
 
 header = []
 
-actors = ['Acteur 1', 'Acteur 2', 'Acteur 3', 'Acteur 4'] # Aurel, Manu, Stephane, Pascal
-actresses = ['Actrice 1', 'Actrice 2', 'Actrice 3', 'Actrice 4'] # Auriane, Cannelle, Clara, Leonie
+actors = {
+    'Pascal': {
+        'name': 'Pascal',
+        'ok': ["LE PERE PELUCHE", "L'HOMME TRANSPARENT", "LE PERE", "L'HOMME PATIENT", "LE MAITRE D'HOTEL"],
+        'nok': [],
+        'max': 100
+    },
+    'Aurel': {
+        'name': 'Aurel',
+        'ok': ["L'HOMME D'EN HAUT", "LE VENDEUR DE REVES"],
+        'nok': []
+    },
+    'Acteur 3': {
+        'name': 'Acteur 3',
+        'ok': [],
+        'nok': []
+    },
+    'Acteur 4': {
+        'name': 'Acteur 4',
+        'ok': [],
+        'nok': []
+    }
+}
+
+actresses = {
+    'Leonie': {
+        'name': 'Leonie',
+        'ok': ["LA FEMME DE TETE", "LA FEMME EN TROP", "LA FEMME EN TROP", "LA MERE", "LA FEMME PATIENTE"],
+        'nok': ["LA FEMME ABSENTE"]
+    },
+    'Actrice 2': {
+        'name': 'Actrice 2',
+        'ok': [],
+        'nok': [],
+        'max': 100
+    },
+    'Actrice 3': {
+        'name': 'Actrice 3',
+        'ok': [],
+        'nok': []
+    },
+    'Actrice 4': {
+        'name': 'Actrice 4',
+        'ok': [],
+        'nok': []
+    }
+}
 
 distributions = []
+
 
 class Character:
     def __init__(self, name, gender, lines):
@@ -129,14 +175,14 @@ def printPartners():
 def getRandomAvailableActor(character, distribution):
     availabilities = []
     if character.gender == 'F':
-        availabilities = actresses
+        availabilities = actresses.values()
     elif character.gender == 'H':
-        availabilities = actors
+        availabilities = actors.values()
     else:
-        availabilities = actors + actresses
+        availabilities = actors.values() + actresses.values()
+    # print ("availabilities " + str(availabilities))
 
-    availabilities = [a for a in availabilities if a not in distribution.incompatibilities or character not in distribution.incompatibilities[a]]
-    print ("availabilities" + str(availabilities))
+    availabilities = [a['name'] for a in availabilities if a['name'] not in distribution.incompatibilities or character not in distribution.incompatibilities[a['name']]]
 
     if len(availabilities) == 0:
         return None
@@ -144,21 +190,23 @@ def getRandomAvailableActor(character, distribution):
     return selectedActor
 
 
-def addCharacterToActor(actor, character, distribution):
-    distribution.actorByCharacter[character.name] = actor
-    if actor not in distribution.charactersByActor:
-        distribution.charactersByActor[actor] = []
-    distribution.charactersByActor[actor].append(character)
+def addCharacterToActor(actorName, character, distribution):
+    distribution.actorByCharacter[character.name] = actorName
+    if actorName not in distribution.charactersByActor:
+        distribution.charactersByActor[actorName] = []
+    distribution.charactersByActor[actorName].append(character)
 
-    if actor not in distribution.incompatibilities:
-        distribution.incompatibilities[actor] = []
+    if actorName not in distribution.incompatibilities:
+        distribution.incompatibilities[actorName] = []
     for partner in character.partners:
-        if partner not in distribution.incompatibilities[actor]:
-            distribution.incompatibilities[actor].append(partner)
+        if partner not in distribution.incompatibilities[actorName]:
+            distribution.incompatibilities[actorName].append(partner)
 
 def newDistrib():
     distribution = Distribution()
-    for character in characters.values():
+    shuffledCharacters = characters.values()
+    random.shuffle(shuffledCharacters)
+    for character in shuffledCharacters:
         selectedActor = getRandomAvailableActor(character, distribution)
         if selectedActor is None:
             return None
