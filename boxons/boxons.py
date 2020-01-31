@@ -12,46 +12,51 @@ header = []
 
 actors = {
     'Pascal': {
+        'gender': 'H',
         'name': 'Pascal',
         'ok': ["LE PERE PELUCHE", "L'HOMME TRANSPARENT", "LE PERE", "L'HOMME PATIENT", "LE MAITRE D'HOTEL"],
         'nok': [],
         'max': 100
     },
     'Aurel': {
+        'gender': 'H',
         'name': 'Aurel',
         'ok': ["L'HOMME D'EN HAUT", "LE VENDEUR DE REVES"],
         'nok': []
     },
     'Acteur 3': {
+        'gender': 'H',
         'name': 'Acteur 3',
         'ok': [],
         'nok': []
     },
     'Acteur 4': {
+        'gender': 'H',
         'name': 'Acteur 4',
         'ok': [],
         'nok': []
-    }
-}
-
-actresses = {
+    },
     'Leonie': {
+        'gender': 'F',
         'name': 'Leonie',
         'ok': ["LA FEMME DE TETE", "LA FEMME EN TROP", "LA FEMME EN TROP", "LA MERE", "LA FEMME PATIENTE"],
         'nok': ["LA FEMME ABSENTE"]
     },
     'Actrice 2': {
+        'gender': 'F',
         'name': 'Actrice 2',
         'ok': [],
         'nok': [],
         'max': 100
     },
     'Actrice 3': {
+        'gender': 'F',
         'name': 'Actrice 3',
         'ok': [],
         'nok': []
     },
     'Actrice 4': {
+        'gender': 'F',
         'name': 'Actrice 4',
         'ok': [],
         'nok': []
@@ -175,14 +180,14 @@ def printPartners():
 def getRandomAvailableActor(character, distribution):
     availabilities = []
     if character.gender == 'F':
-        availabilities = actresses.values()
+        availabilities = [a for a in actors.values() if a['gender'] == 'F']
     elif character.gender == 'H':
-        availabilities = actors.values()
+        availabilities = [a for a in actors.values() if a['gender'] == 'H']
     else:
-        availabilities = actors.values() + actresses.values()
+        availabilities = actors.values()
     # print ("availabilities " + str(availabilities))
 
-    availabilities = [a['name'] for a in availabilities if a['name'] not in distribution.incompatibilities or character not in distribution.incompatibilities[a['name']]]
+    availabilities = [a['name'] for a in availabilities if (a['name'] not in distribution.incompatibilities or character not in distribution.incompatibilities[a['name']])]
 
     if len(availabilities) == 0:
         return None
@@ -197,7 +202,12 @@ def addCharacterToActor(actorName, character, distribution):
     distribution.charactersByActor[actorName].append(character)
 
     if actorName not in distribution.incompatibilities:
+        # if actorName in actors and len(actors[actorName]['nok']) > 0:
+        #     distribution.incompatibilities[actorName] = actors[actorName]['nok']
+        # else:
+        #     distribution.incompatibilities[actorName] = []
         distribution.incompatibilities[actorName] = []
+        # print("#######################" + actorName + "   " + str(distribution.incompatibilities[actorName]))
     for partner in character.partners:
         if partner not in distribution.incompatibilities[actorName]:
             distribution.incompatibilities[actorName].append(partner)
@@ -232,7 +242,7 @@ def calculateLinesInDistribution(distribution):
     return {
         actorName: {
             'lines': calculateSumLines(characters),
-            'diff': diffLines(calculateSumLines(characters)),
+            # 'diff': diffLines(calculateSumLines(characters)),
             'characters': characters
             # 'offset': offsetLines(calculateSumLines(characters)),
         }
@@ -251,14 +261,32 @@ def diffDistribution(distribution):
     lines = [l['lines'] for l in calculateLinesInDistribution(distribution).values()]
     return diffLines(lines)
 
+def keepDistrib(distribution):
+    if nbActorsInDistribution(distribution) != 8:
+        return False
+    
+    data = calculateLinesInDistribution(distribution)
+    pascalLines = data['Pascal']['lines']
+
+    if (pascalLines > 100):
+        return False
+    
+    # offset = offsetLines(distribution)
+
+    print("pascalLines " + str(pascalLines))
+
+
+
+    return True
+
 def main():
     global distributions
     buildData()
     # ok ici on a tous nos partenaires de jeu
     printPartners()
     # on genere des distrib aleatoires
-    it = 1000
-    for i in range(1000):
+    it = 10000
+    for i in range(it):
         print(str(i)+"/"+str(it))
         distribution = newDistrib()
         if distribution is not None and distribution not in distributions:
@@ -266,9 +294,8 @@ def main():
     # on verifie si les repartitions sont homogenes
     
     for d in distributions:
-        offset = offsetLines(d)
-        if nbActorsInDistribution(d) == 8 and offset < 140:
-            result = ["{}: {} ({} repliques, {}).".format(actorName, info['characters'], info['lines'], info['diff']) for actorName, info in calculateLinesInDistribution(d).items()]
+        if keepDistrib(d):
+            result = ["{}: {} ({} repliques, {}).".format(actorName, info['characters'], info['lines']) for actorName, info in calculateLinesInDistribution(d).items()]
             print("Ecart: {}. Resultat = {}\n".format(str(offset), str(result)))
             # print("LINES OFFSET::: " + str(offset))
 
